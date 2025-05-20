@@ -16,7 +16,7 @@ data class Movie (
     @SerialName("poster_path") val posterPath: String?,
     @SerialName("release_date") val releaseDate: String?,
     val title: String,
-    val video: Boolean?,
+    val video: Boolean? = null,
     @SerialName("vote_average") val voteAverage: Double?,
     @SerialName("vote_count") val voteCount: Int?
 )

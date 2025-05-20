@@ -14,6 +14,8 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 
 const val BASE_URL = "https://api.themoviedb.org/3"
+const val IMAGE_URL = "https://image.tmdb.org/t/p/w500/"
+
 
 object MovieAPI {
     private val client = HttpClient(Android) {
@@ -26,23 +28,22 @@ object MovieAPI {
         }
     }
 
-    suspend fun searchMovie() {
+    suspend fun searchMovie(movieTitle: String): SearchResponse {
         val response: SearchResponse = client.get("$BASE_URL/search/movie") {
             // parameters
-            parameter("query", "Final Destination")
-            parameter("language", "en-US")
+            parameter("query", movieTitle)
 
             // headers (API Key)
             header(HttpHeaders.Authorization, "Bearer ${BuildConfig.TMDB_API_KEY}")
         }.body<SearchResponse>()
 
         if (response.results.isNotEmpty()) {
-            println(response.results[0].title)
+            println("Movie Found.")
         } else {
             println("No results found!")
         }
 
-        return
+        return response
     }
 
     suspend fun validateApiKey() {

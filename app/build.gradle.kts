@@ -61,6 +61,9 @@ android {
 
 dependencies {
 
+    // coil (for images)
+    implementation(libs.coil.compose)
+
     // Ktor client
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.cio)

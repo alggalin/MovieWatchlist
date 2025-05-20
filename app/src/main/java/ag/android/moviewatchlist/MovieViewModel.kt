@@ -3,18 +3,29 @@ package ag.android.moviewatchlist
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class MovieViewModel : ViewModel() {
 
-    private val _movie = MutableStateFlow("Click to get a movie")
+    private val _movie = MutableStateFlow("")
     val movie = _movie.asStateFlow()
 
-    fun searchMovie() {
+    private val _searchResult = MutableStateFlow<SearchResponse?>(null)
+    val searchResult: StateFlow<SearchResponse?> = _searchResult.asStateFlow()
+
+    fun updateMovie(title: String) {
+        _movie.value = title
+    }
+
+    fun searchMovie(movieTitle: String) {
         viewModelScope.launch {
-            MovieAPI.searchMovie()
+            val result = MovieAPI.searchMovie(movieTitle)
+            _searchResult.value = result
         }
+
+        return
     }
 
 
