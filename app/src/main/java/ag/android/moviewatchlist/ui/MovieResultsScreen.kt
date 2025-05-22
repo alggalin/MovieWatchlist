@@ -1,9 +1,11 @@
 package ag.android.moviewatchlist.ui
 
 import ag.android.moviewatchlist.Movie
+import ag.android.moviewatchlist.R
 import ag.android.moviewatchlist.SearchResponse
 import android.widget.Space
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,28 +13,34 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 
 // composable for the search results when searching for a movie
 @Composable
-fun MovieResultsScreen(movieResults: SearchResponse?) {
+fun MovieResultsScreen(movieResults: SearchResponse?, modifier: Modifier) {
     val listState = rememberLazyListState()
 
     // "When movieResults changes, run this code"
@@ -40,7 +48,9 @@ fun MovieResultsScreen(movieResults: SearchResponse?) {
         listState.scrollToItem(0)
     }
 
-    LazyColumn(state = listState) {
+    Spacer(modifier = Modifier.size(4.dp))
+
+    LazyColumn(state = listState, modifier = modifier) {
         movieResults?.results?.forEach { movie ->
             item {
                 MovieItem(movie)
@@ -60,36 +70,69 @@ fun MovieItem(movie: Movie) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RectangleShape,
-        onClick = { /* TODO: Navigate to specific movie screen */ },
+        onClick = { /* TODO: Navigate to specific movie screen */ println(movie.posterPath) },
         //border = BorderStroke(1.dp, color = Color.Black),
-        elevation = CardDefaults.cardElevation(8.dp)
+        elevation = CardDefaults.cardElevation(8.dp),
     ) {
 
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
 
+
             AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(imageUrl)
+                    .crossfade(true)
+                    .build(),
                 modifier = Modifier
                     .height(250.dp)
+                    .width(125.dp)
                     .padding(4.dp),
-                model = imageUrl,
                 contentDescription = "Poster for ${movie.title}",
-                contentScale = ContentScale.Fit
+                contentScale = ContentScale.Fit,
+                placeholder = painterResource(R.drawable.baseline_image_24),
+                error = painterResource(R.drawable.baseline_image_not_supported_24)
             )
 
-            Column {
+            Column(
+                modifier = Modifier
+                    .padding(4.dp)
+                    .weight(1f)
+            ) {
                 Text(
                     movie.title + " (${releaseYear})",
-                    modifier = Modifier.padding(4.dp),
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 25.sp,
                     color = Color.Black
                 )
 
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.baseline_star_rate_24),
+                        modifier = Modifier.size(18.dp),
+                        contentDescription = "Rating"
+                    )
+
+                    val movieRating = "%.1f".format(movie.voteAverage)
+
+                    if (movieRating == "0.0") {
+                        Text(
+                            text = "N/A"
+                        )
+                    } else {
+                        Text(
+                            text = "%.1f".format(movie.voteAverage)
+                        )
+
+                    }
+                }
+
                 movie.overview?.let {
                     Text(
-                        it, modifier = Modifier.padding(4.dp),
+                        it,
                         maxLines = 2, overflow = TextOverflow.Ellipsis
                     )
                 }
@@ -101,7 +144,7 @@ fun MovieItem(movie: Movie) {
 // Extracts year from API YYYY-MM-DD format
 fun extractYear(movieDate: String?): String? {
     if (movieDate != null) {
-        return if(movieDate.length >= 4) movieDate.substring(0, 4) else null
+        return if (movieDate.length >= 4) movieDate.substring(0, 4) else null
     }
 
     return null
@@ -145,8 +188,8 @@ private val mockMovies = listOf(
 
 private val mockSearchResponse = SearchResponse(results = mockMovies)
 
-@Preview(showBackground = true)
-@Composable
-fun PreviewMovieItems() {
-    MovieResultsScreen(movieResults = mockSearchResponse)
-}
+//@Preview(showBackground = true)
+//@Composable
+//fun PreviewMovieItems() {
+//    MovieResultsScreen(movieResults = mockSearchResponse)
+//}
