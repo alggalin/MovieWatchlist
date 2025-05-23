@@ -5,6 +5,8 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlinx.serialization)
+    kotlin("kapt")
+    alias(libs.plugins.dagger.hilt)
 }
 
 android.buildFeatures.buildConfig = true
@@ -60,6 +62,15 @@ android {
 }
 
 dependencies {
+
+    // hilt
+    implementation(libs.hilt.android)
+    implementation(libs.androidx.hilt.navigation.fragment)
+    kapt(libs.hilt.compiler)
+    implementation(libs.androidx.hilt.navigation.compose)
+
+    // Navigation dependency
+    implementation(libs.androidx.navigation.compose)
 
     // coil (for images)
     implementation(libs.coil.compose)

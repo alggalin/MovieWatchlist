@@ -1,5 +1,6 @@
 package ag.android.moviewatchlist
 
+import ag.android.moviewatchlist.ui.MovieDetailsScreen
 import ag.android.moviewatchlist.ui.MovieResultsScreen
 import ag.android.moviewatchlist.ui.theme.MovieWatchlistTheme
 import android.os.Bundle
@@ -28,32 +29,67 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import kotlin.math.exp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             MovieWatchlistTheme {
+                val navController = rememberNavController()
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    MovieScreen(innerPadding)
+                    MainNavGraph(navController = navController, innerPadding = innerPadding)
                 }
             }
         }
     }
 }
 
+@Composable
+fun MainNavGraph(navController: NavHostController, innerPadding: PaddingValues) {
+    // Shared Viewmodel defined at NavHost level
+    val sharedViewModel: MovieViewModel = hiltViewModel()
+
+    NavHost(navController = navController, startDestination = "home") {
+        composable("home") {
+            HomeScreen(
+                navController = navController,
+                viewModel = sharedViewModel,
+                innerPadding = innerPadding
+
+                )
+        }
+
+        composable("details") {
+            MovieDetailsScreen(
+                navController = navController,
+                viewModel = sharedViewModel,
+                modifier = Modifier.padding(innerPadding)
+            )
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MovieScreen(innerPadding: PaddingValues, viewModel: MovieViewModel = viewModel()) {
-    val movie by viewModel.movie.collectAsState()
-    val testMovie by viewModel.searchResult.collectAsState()
+fun HomeScreen(
+    navController: NavHostController,
+    viewModel: MovieViewModel,
+    innerPadding: PaddingValues
+) {
+    val movieSearched by viewModel.movie.collectAsState()
+    val movieSearchResult by viewModel.searchResult.collectAsState()
+    val selectedMovie by viewModel.selectedMovie.collectAsState()
 
     // State variable for search bar collapse/expansion
     var expanded by rememberSaveable { mutableStateOf(false) }
-
 
     Column(
         modifier = Modifier
@@ -67,7 +103,7 @@ fun MovieScreen(innerPadding: PaddingValues, viewModel: MovieViewModel = viewMod
                 .semantics { traversalIndex = 0f },
             leadingIcon = {
 
-                if(!expanded) {
+                if (!expanded) {
                     Icon(
                         painter = painterResource(R.drawable.baseline_search_24),
                         contentDescription = "Search Icon"
@@ -85,7 +121,7 @@ fun MovieScreen(innerPadding: PaddingValues, viewModel: MovieViewModel = viewMod
             },
             trailingIcon = {
 
-                if (expanded && movie.isNotEmpty()) {
+                if (expanded && movieSearched.isNotEmpty()) {
                     IconButton(
                         onClick = {
                             viewModel.updateMovie("")
@@ -98,9 +134,9 @@ fun MovieScreen(innerPadding: PaddingValues, viewModel: MovieViewModel = viewMod
                     }
                 }
             },
-            query = movie,
+            query = movieSearched,
             onQueryChange = { viewModel.updateMovie(it) },
-            onSearch = { viewModel.searchMovie(movie) },
+            onSearch = { viewModel.searchMovie(movieSearched) }, // TODO: FIX THE SEARCH BAR NOT CLOSING WHEN CLICKING A RESULT
             active = expanded,
             onActiveChange = {
                 expanded = !expanded
@@ -108,7 +144,12 @@ fun MovieScreen(innerPadding: PaddingValues, viewModel: MovieViewModel = viewMod
             },
             placeholder = { Text("Search Movie") }
         ) {
-            MovieResultsScreen(testMovie, modifier = Modifier.padding(innerPadding))
+            MovieResultsScreen(
+                navController,
+                movieSearchResult,
+                viewModel,
+                modifier = Modifier.padding(innerPadding)
+            )
         }
 
 

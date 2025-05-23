@@ -1,5 +1,9 @@
 package ag.android.moviewatchlist
 
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.android.Android
@@ -16,6 +20,14 @@ import kotlinx.serialization.json.Json
 const val BASE_URL = "https://api.themoviedb.org/3"
 const val IMAGE_URL = "https://image.tmdb.org/t/p/w500/"
 
+@Module
+@InstallIn(SingletonComponent::class)
+object MovieModule {
+    @Provides
+    fun provideMovieAPI(): MovieAPI {
+        return MovieAPI
+    }
+}
 
 object MovieAPI {
     private val client = HttpClient(Android) {

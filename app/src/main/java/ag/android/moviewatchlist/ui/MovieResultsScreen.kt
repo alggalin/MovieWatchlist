@@ -1,11 +1,9 @@
 package ag.android.moviewatchlist.ui
 
 import ag.android.moviewatchlist.Movie
+import ag.android.moviewatchlist.MovieViewModel
 import ag.android.moviewatchlist.R
 import ag.android.moviewatchlist.SearchResponse
-import android.widget.Space
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -25,22 +23,26 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 
 // composable for the search results when searching for a movie
 @Composable
-fun MovieResultsScreen(movieResults: SearchResponse?, modifier: Modifier) {
+fun MovieResultsScreen(
+    navController: NavController,
+    movieResults: SearchResponse?,
+    viewModel: MovieViewModel,
+    modifier: Modifier
+) {
     val listState = rememberLazyListState()
 
     // "When movieResults changes, run this code"
@@ -53,7 +55,7 @@ fun MovieResultsScreen(movieResults: SearchResponse?, modifier: Modifier) {
     LazyColumn(state = listState, modifier = modifier) {
         movieResults?.results?.forEach { movie ->
             item {
-                MovieItem(movie)
+                MovieItem(movie, viewModel, navController)
             }
         }
     }
@@ -62,7 +64,7 @@ fun MovieResultsScreen(movieResults: SearchResponse?, modifier: Modifier) {
 
 // Composable for the layout for the individual movie information
 @Composable
-fun MovieItem(movie: Movie) {
+fun MovieItem(movie: Movie, viewModel: MovieViewModel, navController: NavController) {
 
     val imageUrl = "https://image.tmdb.org/t/p/original${movie.posterPath}"
     val releaseYear = extractYear(movie.releaseDate)
@@ -70,8 +72,10 @@ fun MovieItem(movie: Movie) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RectangleShape,
-        onClick = { /* TODO: Navigate to specific movie screen */ println(movie.posterPath) },
-        //border = BorderStroke(1.dp, color = Color.Black),
+        onClick = {
+            viewModel.selectMovie(movie)
+            navController.navigate("details")
+        },
         elevation = CardDefaults.cardElevation(8.dp),
     ) {
 
@@ -79,11 +83,8 @@ fun MovieItem(movie: Movie) {
             verticalAlignment = Alignment.CenterVertically
         ) {
 
-
             AsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(imageUrl)
-                    .crossfade(true)
+                model = ImageRequest.Builder(LocalContext.current).data(imageUrl).crossfade(true)
                     .build(),
                 modifier = Modifier
                     .height(250.dp)
@@ -132,8 +133,7 @@ fun MovieItem(movie: Movie) {
 
                 movie.overview?.let {
                     Text(
-                        it,
-                        maxLines = 2, overflow = TextOverflow.Ellipsis
+                        it, maxLines = 2, overflow = TextOverflow.Ellipsis
                     )
                 }
             }
@@ -141,7 +141,7 @@ fun MovieItem(movie: Movie) {
     }
 }
 
-// Extracts year from API YYYY-MM-DD format
+// Extracts YYYY from API YYYY-MM-DD
 fun extractYear(movieDate: String?): String? {
     if (movieDate != null) {
         return if (movieDate.length >= 4) movieDate.substring(0, 4) else null
@@ -149,47 +149,3 @@ fun extractYear(movieDate: String?): String? {
 
     return null
 }
-
-
-private val mockMovies = listOf(
-    Movie(
-        id = 1,
-        title = "Godzilla Minus One",
-        overview = "Post-war Japan is attacked by a new kaiju threat.",
-        adult = null,
-        backdropPath = null,
-        genreIds = null,
-        originalLanguage = null,
-        originalTitle = null,
-        popularity = null,
-        posterPath = "/pu6twJJq87vzYvtu0OftcN0AkNU.jpg",
-        releaseDate = null,
-        video = null,
-        voteAverage = null,
-        voteCount = null
-    ),
-    Movie(
-        id = 2,
-        title = "Shin Godzilla",
-        overview = "A strange creature emerges in Tokyo Bay...",
-        adult = null,
-        backdropPath = null,
-        genreIds = null,
-        originalLanguage = null,
-        originalTitle = null,
-        popularity = null,
-        posterPath = "/9nyToPG5mhfm4KiPGChu35jH9QZ.jpg",
-        releaseDate = null,
-        video = null,
-        voteAverage = null,
-        voteCount = null
-    )
-)
-
-private val mockSearchResponse = SearchResponse(results = mockMovies)
-
-//@Preview(showBackground = true)
-//@Composable
-//fun PreviewMovieItems() {
-//    MovieResultsScreen(movieResults = mockSearchResponse)
-//}
