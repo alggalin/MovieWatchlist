@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -22,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
@@ -40,8 +42,7 @@ import coil.request.ImageRequest
 fun MovieResultsScreen(
     navController: NavController,
     movieResults: SearchResponse?,
-    viewModel: MovieViewModel,
-    modifier: Modifier
+    viewModel: MovieViewModel
 ) {
     val listState = rememberLazyListState()
 
@@ -52,12 +53,20 @@ fun MovieResultsScreen(
 
     Spacer(modifier = Modifier.size(4.dp))
 
-    LazyColumn(state = listState, modifier = modifier) {
-        movieResults?.results?.forEach { movie ->
-            item {
-                MovieItem(movie, viewModel, navController)
+    if (movieResults != null && movieResults.results.isNotEmpty()) {
+        LazyColumn(state = listState) {
+            movieResults.results.forEach { movie ->
+                item {
+                    MovieItem(movie, viewModel, navController)
+                }
             }
         }
+
+    } else if (movieResults != null && movieResults.results.isEmpty()) {
+        Text(
+            modifier = Modifier.padding(4.dp),
+            text = "No Results Found."
+        )
     }
 }
 
@@ -67,16 +76,19 @@ fun MovieResultsScreen(
 fun MovieItem(movie: Movie, viewModel: MovieViewModel, navController: NavController) {
 
     val imageUrl = "https://image.tmdb.org/t/p/original${movie.posterPath}"
-    val releaseYear = extractYear(movie.releaseDate)
+    val releaseYear: String? = extractYear(movie.releaseDate)
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(2.dp)
+            .height(200.dp),
         shape = RectangleShape,
         onClick = {
             viewModel.selectMovie(movie)
             navController.navigate("details")
         },
-        elevation = CardDefaults.cardElevation(8.dp),
+        elevation = CardDefaults.cardElevation(4.dp),
     ) {
 
         Row(
@@ -87,9 +99,10 @@ fun MovieItem(movie: Movie, viewModel: MovieViewModel, navController: NavControl
                 model = ImageRequest.Builder(LocalContext.current).data(imageUrl).crossfade(true)
                     .build(),
                 modifier = Modifier
-                    .height(250.dp)
+                    .clip(RoundedCornerShape(16.dp))
                     .width(125.dp)
-                    .padding(4.dp),
+                    .padding(4.dp)
+                    .padding(vertical = 8.dp),
                 contentDescription = "Poster for ${movie.title}",
                 contentScale = ContentScale.Fit,
                 placeholder = painterResource(R.drawable.baseline_image_24),
@@ -101,12 +114,14 @@ fun MovieItem(movie: Movie, viewModel: MovieViewModel, navController: NavControl
                     .padding(4.dp)
                     .weight(1f)
             ) {
-                Text(
-                    movie.title + " (${releaseYear})",
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 25.sp,
-                    color = Color.Black
-                )
+                if(releaseYear != null) {
+                    Text(
+                        movie.title + " (${releaseYear})",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 25.sp,
+                        color = Color.Black
+                    )
+                }
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically
@@ -129,6 +144,11 @@ fun MovieItem(movie: Movie, viewModel: MovieViewModel, navController: NavControl
                         )
 
                     }
+
+                    Text(
+                        text = "(${movie.voteCount})",
+                        modifier = Modifier.padding(start = 4.dp)
+                    )
                 }
 
                 movie.overview?.let {
