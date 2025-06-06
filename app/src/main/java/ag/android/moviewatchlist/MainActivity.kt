@@ -76,24 +76,32 @@ fun HomeScreen(
     val movieSearched by viewModel.movie.collectAsState()
     val movieSearchResult by viewModel.searchResult.collectAsState()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-    ) {
+    Scaffold(
+        topBar = {
+            MovieSearchBar(viewModel = viewModel, movieSearched = movieSearched)
+        },
+        content = { padding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+            ) {
 
-        MovieSearchBar(viewModel = viewModel, movieSearched = movieSearched)
+                MovieResultsScreen(
+                    navController,
+                    movieSearchResult,
+                    viewModel
+                )
 
-        MovieResultsScreen(
-            navController,
-            movieSearchResult,
-            viewModel
-        )
-
-    }
+            }
+        }
+    )
 }
 
 /*
     TODO:
+        - Add sections for Popular, Upcoming, Now Playing, Top Rated in the home screen
+            - Uses a Lazy List Row for horizontal scrolling  
         - Rate Movie
             - 1-10? Like/Dislike/Favorite
         - Create list of movies
