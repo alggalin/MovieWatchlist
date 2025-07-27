@@ -21,20 +21,19 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
+import javax.inject.Inject
 
 const val BASE_URL = "https://api.themoviedb.org/3"
-const val IMAGE_URL = "https://image.tmdb.org/t/p/w500/"
+
 
 @Module
 @InstallIn(SingletonComponent::class)
 object MovieModule {
     @Provides
-    fun provideMovieAPI(): MovieAPI {
-        return MovieAPI
-    }
+    fun provideMovieAPI(): MovieAPI = MovieAPI()
 }
 
-object MovieAPI {
+class MovieAPI @Inject constructor() {
     private val client = HttpClient(Android) {
         install(ContentNegotiation) {
             json(Json {
@@ -43,6 +42,58 @@ object MovieAPI {
                 coerceInputValues = true
             })
         }
+    }
+
+    /*
+        Retrieve request token that will be used to login a user
+
+        Will need to redirect user to:
+
+            https://www.themoviedb.org/authenticate/{REQUEST_TOKEN}?redirect_to=myapp://auth
+
+        "myapp://auth" can be replaced with where we want user to be redirected into app after login
+     */
+
+    suspend fun getRequestToken(): String? {
+
+        return try {
+            val tokenResponse = client.get("$BASE_URL/authentication/token/new") {
+                header(HttpHeaders.Authorization, "Bearer ${BuildConfig.TMDB_API_KEY}")
+                contentType(ContentType.Application.Json)
+            }
+
+            val requestToken = tokenResponse.body<TokenRequest>().requestToken
+
+            requestToken
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+
+    }
+
+    /*
+        Retrieves sessionId that will be used to make actions through the linked account
+
+     */
+    suspend fun getSessionId(token: String): String? {
+
+        return try {
+            val sessionResponse = client.post("$BASE_URL/authentication/session/new") {
+                header(HttpHeaders.Authorization, "Bearer ${BuildConfig.TMDB_API_KEY}")
+                contentType(ContentType.Application.Json)
+                setBody(SessionRequest(token))
+            }
+            val sessionId = sessionResponse.body<SessionResponse>().sessionId
+
+            sessionId
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+
     }
 
     suspend fun searchMovie(movieTitle: String): SearchResponse {
@@ -63,16 +114,36 @@ object MovieAPI {
         return response
     }
 
+    suspend fun popularMovies(): SearchResponse {
+        val response: SearchResponse = client.get("$BASE_URL/movie/popular") {
+            header(HttpHeaders.Authorization, "Bearer ${BuildConfig.TMDB_API_KEY}")
+        }.body<SearchResponse>()
+
+        return response
+    }
+
+    suspend fun upcomingMovies(): SearchResponse {
+        val response: SearchResponse = client.get("$BASE_URL/movie/upcoming") {
+            header(HttpHeaders.Authorization, "Bearer ${BuildConfig.TMDB_API_KEY}")
+        }.body<SearchResponse>()
+
+        return response
+    }
+
+    suspend fun currentlyPlaying(): SearchResponse {
+        val response: SearchResponse = client.get("$BASE_URL/movie/now_playing") {
+            header(HttpHeaders.Authorization, "Bearer ${BuildConfig.TMDB_API_KEY}")
+        }.body<SearchResponse>()
+
+        return response
+    }
+
     suspend fun addToWatchlist(
-        sessionId: String,
-        accountId: String,
-        mediaId: Int
+        sessionId: String, accountId: Int, mediaId: Int
     ): Boolean {
 
         val requestBody = WatchListRequest(
-            mediaId = mediaId,
-            mediaType = "movie",
-            watchlist = true
+            mediaId = mediaId, mediaType = "movie", watchlist = true
         )
 
         // TODO: Retrieve accountId

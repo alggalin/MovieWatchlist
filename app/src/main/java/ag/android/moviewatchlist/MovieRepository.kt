@@ -12,4 +12,28 @@ class MovieRepository @Inject constructor(
     suspend fun searchMovie(movieTitle: String): SearchResponse {
         return api.searchMovie(movieTitle)
     }
+
+    suspend fun getUpcomingMovies(): SearchResponse {
+        return api.upcomingMovies()
+    }
+
+    suspend fun getPopularMovies(): SearchResponse {
+        return api.popularMovies()
+    }
+
+    suspend fun getCurrentlyPlaying(): SearchResponse {
+        return  api.currentlyPlaying()
+    }
+
+    suspend fun addToWatchlist(sessionId: String, accountId: Int, mediaId: Int) {
+        api.addToWatchlist(sessionId, accountId, mediaId)
+    }
+
+    suspend fun getRequestToken(): String? {
+        return api.getRequestToken()
+    }
+
+    suspend fun getSessionId(token: String): String? {
+        return api.getSessionId(token)
+    }
 }

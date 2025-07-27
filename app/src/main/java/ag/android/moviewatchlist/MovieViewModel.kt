@@ -20,9 +20,23 @@ class MovieViewModel @Inject constructor(
     private val _searchResult = MutableStateFlow<SearchResponse?>(null)
     val searchResult: StateFlow<SearchResponse?> = _searchResult.asStateFlow()
 
+    private val _popularMovies = MutableStateFlow<SearchResponse?>(null)
+    val popularMovies: StateFlow<SearchResponse?> = _popularMovies.asStateFlow()
+
+    private val _upcomingMovies = MutableStateFlow<SearchResponse?>(null)
+    val upcomingMovies: StateFlow<SearchResponse?> = _upcomingMovies.asStateFlow()
+
+    private val _inTheaters = MutableStateFlow<SearchResponse?>(null)
+    val inTheaters: StateFlow<SearchResponse?> = _inTheaters.asStateFlow()
+
     private val _selectedMovie = MutableStateFlow<Movie?>(null)
     val selectedMovie = _selectedMovie.asStateFlow()
 
+    private var _sessionId = MutableStateFlow<String?>(null)
+    val sessionId = _sessionId.asStateFlow()
+
+    private var _accountId = MutableStateFlow<String?>(null)
+    val accountId = _accountId.asStateFlow()
 
     fun selectMovie(movie: Movie) {
         _selectedMovie.value = movie
@@ -35,6 +49,10 @@ class MovieViewModel @Inject constructor(
         _movie.value = title
     }
 
+    fun setSessionId(sessionId: String?) {
+        _sessionId.value = sessionId
+    }
+
     fun searchMovie(movieTitle: String) {
         viewModelScope.launch {
             val result = repository.searchMovie(movieTitle)
@@ -44,10 +62,36 @@ class MovieViewModel @Inject constructor(
         return
     }
 
-
-    fun validateApi() {
+    fun getPopularMovies() {
         viewModelScope.launch {
-            MovieAPI.validateApiKey()
+            _popularMovies.value = repository.getPopularMovies()
+
         }
+    }
+
+    fun getUpcomingMovies() {
+        viewModelScope.launch {
+            _upcomingMovies.value = repository.getUpcomingMovies()
+        }
+    }
+    fun getCurrentlyPlaying() {
+        viewModelScope.launch {
+            _inTheaters.value = repository.getCurrentlyPlaying()
+        }
+    }
+
+    fun addToWatchlist(sessionId: String, accountId: Int, mediaId: Int) {
+        viewModelScope.launch {
+            repository.addToWatchlist(sessionId, accountId, mediaId)
+        }
+    }
+
+
+    suspend fun getRequestToken(): String? {
+        return repository.getRequestToken()
+    }
+
+    suspend fun getSessionId(token: String): String? {
+        return repository.getSessionId(token)
     }
 }
