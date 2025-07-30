@@ -48,7 +48,11 @@ fun MovieDetailsScreen(
 
     Scaffold(
         topBar = {
-            MovieSearchBar(viewModel = viewModel, movieSearched = movieSearched)
+            MovieSearchBar(
+                viewModel = viewModel,
+                navController = navController,
+                movieSearched = movieSearched
+            )
         },
         content = { padding ->
             Column(
@@ -91,13 +95,18 @@ fun MovieDetailsScreen(
                     )
 
                     Column(
-                        modifier = Modifier.height(300.dp).fillMaxWidth().padding(vertical = 16.dp),
+                        modifier = Modifier
+                            .height(300.dp)
+                            .fillMaxWidth()
+                            .padding(vertical = 16.dp),
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
 
                         Row(
-                            modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 32.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.Center
                         ) {

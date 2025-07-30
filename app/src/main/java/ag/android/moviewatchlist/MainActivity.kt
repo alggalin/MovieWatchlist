@@ -1,5 +1,6 @@
 package ag.android.moviewatchlist
 
+import ag.android.moviewatchlist.ui.FeaturedMoviesScreen
 import ag.android.moviewatchlist.ui.MovieDetailsScreen
 import ag.android.moviewatchlist.ui.MovieResultsScreen
 import ag.android.moviewatchlist.ui.MovieSearchBar
@@ -16,6 +17,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
@@ -78,7 +81,6 @@ class MainActivity : ComponentActivity() {
 //    }
 
 
-
 }
 
 //override fun onNewIntent(intent: Intent?) {
@@ -123,25 +125,48 @@ fun HomeScreen(
     val movieSearched by viewModel.movie.collectAsState()
     val movieSearchResult by viewModel.searchResult.collectAsState()
 
+    val popularMovies by viewModel.popularMovies.collectAsState()
+    val upcomingMovies by viewModel.upcomingMovies.collectAsState()
+    val theaterMovies by viewModel.inTheaters.collectAsState()
+
     val context = LocalContext.current
     var baseUrl = "https://www.themoviedb.org/authenticate/"
 
+    viewModel.getPopularMovies()
+    viewModel.getUpcomingMovies()
+    viewModel.getCurrentlyPlaying()
+
     Scaffold(
         topBar = {
-            MovieSearchBar(viewModel = viewModel, movieSearched = movieSearched)
+            MovieSearchBar(
+                viewModel = viewModel,
+                navController = navController,
+                movieSearched = movieSearched
+            )
         },
         content = { padding ->
             Column(
                 modifier = Modifier
-                    .fillMaxSize()
                     .padding(padding)
             ) {
 
-                MovieResultsScreen(
-                    navController,
-                    movieSearchResult,
-                    viewModel
-                )
+                Column(
+                    Modifier.verticalScroll(rememberScrollState())
+                ) {
+                    FeaturedMoviesScreen("Popular Movies", popularMovies, viewModel, navController)
+
+                    FeaturedMoviesScreen("Coming Soon", upcomingMovies, viewModel, navController)
+
+                    FeaturedMoviesScreen("In Theaters", theaterMovies, viewModel, navController)
+                }
+
+
+
+//                MovieResultsScreen(
+//                    navController,
+//                    movieSearchResult,
+//                    viewModel
+//                )
 
                 Button(
                     onClick = {

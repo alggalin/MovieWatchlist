@@ -54,6 +54,12 @@ class MovieViewModel @Inject constructor(
     }
 
     fun searchMovie(movieTitle: String) {
+
+        if(movieTitle == "") {
+            _searchResult.value = null
+            return
+        }
+
         viewModelScope.launch {
             val result = repository.searchMovie(movieTitle)
             _searchResult.value = result
@@ -63,16 +69,20 @@ class MovieViewModel @Inject constructor(
     }
 
     fun getPopularMovies() {
-        viewModelScope.launch {
-            _popularMovies.value = repository.getPopularMovies()
 
-        }
+        viewModelScope.launch {
+                _popularMovies.value = repository.getPopularMovies()
+
+            }
+
     }
 
-    fun getUpcomingMovies() {
+    fun getUpcomingMovies(): SearchResponse? {
         viewModelScope.launch {
             _upcomingMovies.value = repository.getUpcomingMovies()
         }
+
+        return _upcomingMovies.value
     }
     fun getCurrentlyPlaying() {
         viewModelScope.launch {

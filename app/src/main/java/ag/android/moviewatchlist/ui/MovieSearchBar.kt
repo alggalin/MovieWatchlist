@@ -10,6 +10,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -19,13 +20,16 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MovieSearchBar(viewModel: MovieViewModel, movieSearched: String) {
+fun MovieSearchBar(viewModel: MovieViewModel, navController: NavController, movieSearched: String) {
 
     // State variable for search bar collapse/expansion
     var typing by rememberSaveable { mutableStateOf(false) }
+
+    val movieSearchResult by viewModel.searchResult.collectAsState()
 
     SearchBar(
         modifier = Modifier
@@ -41,7 +45,11 @@ fun MovieSearchBar(viewModel: MovieViewModel, movieSearched: String) {
                 )
             } else {
                 IconButton(
-                    onClick = { typing = !typing }
+                    onClick = {
+                        viewModel.updateMovie("")
+                        viewModel.searchMovie("")
+                        typing = !typing
+                    }
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.baseline_arrow_back_24),
@@ -73,10 +81,10 @@ fun MovieSearchBar(viewModel: MovieViewModel, movieSearched: String) {
         },
         active = typing,
         onActiveChange = {
-
+            typing = it
         },
         placeholder = { Text("Search Movie") }
     ) {
-
+        MovieResultsScreen(navController, movieSearchResult, viewModel)
     }
 }
