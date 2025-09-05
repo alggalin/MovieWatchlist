@@ -1,5 +1,6 @@
 package ag.android.moviewatchlist
 
+import android.util.Log
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -85,9 +86,9 @@ class MovieAPI @Inject constructor() {
                 contentType(ContentType.Application.Json)
                 setBody(SessionRequest(token))
             }
-            val sessionId = sessionResponse.body<SessionResponse>().sessionId
+            Log.d("SESSION RAW", sessionResponse.bodyAsText())
 
-            sessionId
+            sessionResponse.body<SessionResponse>().sessionId
 
         } catch (e: Exception) {
             e.printStackTrace()
@@ -146,7 +147,7 @@ class MovieAPI @Inject constructor() {
             mediaId = mediaId, mediaType = "movie", watchlist = true
         )
 
-        // TODO: Retrieve accountId
+
         val response: HttpResponse = client.post("$BASE_URL/account/$accountId/watchlist") {
             contentType(ContentType.Application.Json)
             parameter("session_id", sessionId)
@@ -155,6 +156,16 @@ class MovieAPI @Inject constructor() {
         }.body()
 
         return response.status == HttpStatusCode.Created || response.status == HttpStatusCode.OK
+    }
+
+    suspend fun fetchAccountId(sessionId: String?): AccountResponse {
+        val response: AccountResponse = client.get("$BASE_URL/account") {
+            parameter("session_id", sessionId)
+            parameter("api_key", BuildConfig.TMDB_API_KEY)
+            header(HttpHeaders.Authorization, "Bearer ${BuildConfig.TMDB_API_KEY}")
+        }.body()
+
+        return response
     }
 
     suspend fun validateApiKey() {

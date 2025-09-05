@@ -1,18 +1,38 @@
 package ag.android.moviewatchlist
 
+import ag.android.moviewatchlist.SessionKey.SESSION_ID
+import android.content.Context
+import androidx.datastore.preferences.core.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class MovieViewModel @Inject constructor(
-    private val repository: MovieRepository
+    private val repository: MovieRepository,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
+
+    fun saveSessionId(sessionId: String) {
+        viewModelScope.launch {
+            context.sessionDataStore.edit { prefs ->
+                prefs[SessionKey.SESSION_ID] = sessionId
+            }
+        }
+    }
+
+    suspend fun getSessionId(context: Context): String? {
+        val prefs = context.sessionDataStore.data.first()
+        setSessionId(prefs[SESSION_ID])
+        return prefs[SESSION_ID]
+    }
 
     private val _movie = MutableStateFlow("")
     val movie = _movie.asStateFlow()
@@ -35,8 +55,15 @@ class MovieViewModel @Inject constructor(
     private var _sessionId = MutableStateFlow<String?>(null)
     val sessionId = _sessionId.asStateFlow()
 
-    private var _accountId = MutableStateFlow<String?>(null)
+    private var _accountId = MutableStateFlow<Int?>(null)
     val accountId = _accountId.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            val id = getSessionId(context)
+            _sessionId.value = id
+        }
+    }
 
     fun selectMovie(movie: Movie) {
         _selectedMovie.value = movie
@@ -101,7 +128,13 @@ class MovieViewModel @Inject constructor(
         return repository.getRequestToken()
     }
 
-    suspend fun getSessionId(token: String): String? {
+    suspend fun requestSessionId(token: String): String? {
         return repository.getSessionId(token)
+    }
+
+    suspend fun fetchAccountId(sessionId: String?): Int {
+        val response = repository.fetchAccountId(sessionId)
+        _accountId.value = response.id
+        return response.id
     }
 }

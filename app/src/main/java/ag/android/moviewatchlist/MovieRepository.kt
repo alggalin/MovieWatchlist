@@ -36,4 +36,8 @@ class MovieRepository @Inject constructor(
     suspend fun getSessionId(token: String): String? {
         return api.getSessionId(token)
     }
+
+    suspend fun fetchAccountId(sessionId: String?): AccountResponse {
+        return api.fetchAccountId(sessionId)
+    }
 }

@@ -140,7 +140,15 @@ fun MovieDetailsScreen(
                                 .fillMaxWidth()
                                 .wrapContentSize(),
                             shape = RoundedCornerShape(8.dp),
-                            onClick = { }
+                            onClick = { //  check if user is logged in, if they are then add to their watchlist
+                                // if they're not, request a token to get a sessionId
+                                // redirect them with the token to login
+                                viewModel.addToWatchlist(
+                                    viewModel.sessionId.value!!,
+                                    viewModel.accountId.value!!,
+                                    movie!!.id
+                                )
+                            }
                         ) {
                             Icon(
                                 painter = painterResource(R.drawable.baseline_add_24),

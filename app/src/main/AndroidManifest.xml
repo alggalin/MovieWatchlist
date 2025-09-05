@@ -35,7 +35,7 @@
                 <data
                     android:scheme="moviewatchlist"
                     android:host="auth"
-                    android:path="/callback" />
+                    android:pathPrefix="/callback" />
 
             </intent-filter>
         </activity>

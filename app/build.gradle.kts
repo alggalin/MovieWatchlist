@@ -63,6 +63,9 @@ android {
 
 dependencies {
 
+    // Preferences DataStore
+    implementation(libs.androidx.datastore.preferences)
+
     // hilt
     implementation(libs.hilt.android)
     implementation(libs.androidx.hilt.navigation.fragment)
