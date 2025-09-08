@@ -139,12 +139,26 @@ class MovieAPI @Inject constructor() {
         return response
     }
 
-    suspend fun addToWatchlist(
-        sessionId: String, accountId: Int, mediaId: Int
+    suspend fun movieAccountStates(movieId: Int, sessionId: String?): AccountStates? {
+
+        if(sessionId == null) {
+            return null
+        }
+
+        val response: AccountStates = client.get("$BASE_URL/movie/$movieId/account_states") {
+            header(HttpHeaders.Authorization, "Bearer ${BuildConfig.TMDB_API_KEY}")
+            parameter("session_id", sessionId)
+        }.body<AccountStates>()
+
+        return response
+    }
+
+    suspend fun toggleWatchlist(
+        addingToWatchlist: Boolean, sessionId: String, accountId: Int, mediaId: Int
     ): Boolean {
 
         val requestBody = WatchListRequest(
-            mediaId = mediaId, mediaType = "movie", watchlist = true
+            mediaId = mediaId, mediaType = "movie", watchlist = addingToWatchlist
         )
 
 

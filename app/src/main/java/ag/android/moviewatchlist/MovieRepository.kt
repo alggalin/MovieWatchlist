@@ -25,8 +25,12 @@ class MovieRepository @Inject constructor(
         return  api.currentlyPlaying()
     }
 
-    suspend fun addToWatchlist(sessionId: String, accountId: Int, mediaId: Int) {
-        api.addToWatchlist(sessionId, accountId, mediaId)
+    suspend fun movieAccountStates(movieId: Int, sessionId: String?): AccountStates? {
+        return api.movieAccountStates(movieId, sessionId)
+    }
+
+    suspend fun toggleWatchlist(addingToWatchlist: Boolean, sessionId: String, accountId: Int, mediaId: Int): Boolean {
+        return api.toggleWatchlist(addingToWatchlist, sessionId, accountId, mediaId)
     }
 
     suspend fun getRequestToken(): String? {

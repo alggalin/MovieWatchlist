@@ -2,6 +2,7 @@ package ag.android.moviewatchlist
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 
 @Serializable
 data class WatchListRequest(
@@ -19,4 +20,24 @@ data class WatchlistResponse(
     val statusCode: Int,
     @SerialName("status_message")
     val statusMessage: String
+)
+
+@Serializable
+data class AccountStates(
+    val id: Int,
+    val favorite: Boolean,
+    val rated: JsonElement?,
+    val watchlist: Boolean
+)
+
+@Serializable
+data class Rated(
+    val value: Int
+)
+
+data class NewAccountStates(
+    val id: Int,
+    val favorite: Boolean,
+    val rated: Int?,
+    val watchlist: Boolean
 )

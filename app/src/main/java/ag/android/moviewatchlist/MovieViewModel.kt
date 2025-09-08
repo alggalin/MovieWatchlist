@@ -12,6 +12,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.jsonPrimitive
 import javax.inject.Inject
 
 @HiltViewModel
@@ -52,6 +56,9 @@ class MovieViewModel @Inject constructor(
     private val _selectedMovie = MutableStateFlow<Movie?>(null)
     val selectedMovie = _selectedMovie.asStateFlow()
 
+    private val _accountStates = MutableStateFlow<NewAccountStates?>(null)
+    val accountStates = _accountStates.asStateFlow()
+
     private var _sessionId = MutableStateFlow<String?>(null)
     val sessionId = _sessionId.asStateFlow()
 
@@ -72,6 +79,11 @@ class MovieViewModel @Inject constructor(
     fun getSelectedMovie(): Movie? {
         return selectedMovie.value
     }
+
+    fun getMovieStates(): NewAccountStates? {
+        return accountStates.value
+    }
+
     fun updateMovie(title: String) {
         _movie.value = title
     }
@@ -117,9 +129,37 @@ class MovieViewModel @Inject constructor(
         }
     }
 
-    fun addToWatchlist(sessionId: String, accountId: Int, mediaId: Int) {
+    suspend fun movieAccountStates(movieId: Int, sessionId: String?) {
         viewModelScope.launch {
-            repository.addToWatchlist(sessionId, accountId, mediaId)
+            val originalState = repository.movieAccountStates(movieId, sessionId)
+            val ratingVal = when (val rated = originalState?.rated) {
+                is JsonObject -> rated["value"]?.jsonPrimitive?.intOrNull
+                is JsonPrimitive -> null
+                else -> null
+            }
+
+            _accountStates.value = NewAccountStates(
+                id = originalState!!.id,
+                favorite = originalState.favorite,
+                rated = ratingVal,
+                watchlist = originalState.watchlist
+            )
+        }
+    }
+
+    fun toggleWatchlist(addingToWatchlist: Boolean, sessionId: String, accountId: Int, mediaId: Int) {
+        viewModelScope.launch {
+
+            val success = repository.toggleWatchlist(addingToWatchlist, sessionId, accountId, mediaId)
+
+            if(success) {
+                _accountStates.value = accountStates.value?.copy(
+                    watchlist = !accountStates.value!!.watchlist
+                )
+
+            } else {
+                // TODO: Show error
+            }
         }
     }
 

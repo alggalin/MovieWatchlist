@@ -18,6 +18,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -55,6 +56,28 @@ fun MovieDetailsScreen(
             )
         },
         content = { padding ->
+
+
+            LaunchedEffect(movie!!.id) {
+                viewModel.movieAccountStates(movie!!.id, viewModel.sessionId.value)
+            }
+
+            /*
+                accountStates holds the following:
+
+                            data class AccountStates(
+                                val id: Int,
+                                val favorite: Boolean,
+                                val rated: Rated?,
+                                val watchlist: Boolean
+                            )
+
+                            data class Rated(
+                                val value: Int
+                            )
+             */
+            val accountStates by viewModel.accountStates.collectAsState()
+
             Column(
                 modifier = modifier
                     .fillMaxSize()
@@ -135,6 +158,7 @@ fun MovieDetailsScreen(
                             )
                         }
 
+
                         Button(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -143,24 +167,43 @@ fun MovieDetailsScreen(
                             onClick = { //  check if user is logged in, if they are then add to their watchlist
                                 // if they're not, request a token to get a sessionId
                                 // redirect them with the token to login
-                                viewModel.addToWatchlist(
-                                    viewModel.sessionId.value!!,
-                                    viewModel.accountId.value!!,
-                                    movie!!.id
-                                )
+                                if (viewModel.sessionId.value != null && viewModel.accountId.value != null) {
+
+                                    viewModel.toggleWatchlist(
+                                        !accountStates!!.watchlist,
+                                        viewModel.sessionId.value!!,
+                                        viewModel.accountId.value!!,
+                                        movie!!.id
+                                    )
+                                }
                             }
                         ) {
-                            Icon(
-                                painter = painterResource(R.drawable.baseline_add_24),
-                                contentDescription = "Add to Watchlist Button"
-                            )
-                            Text(
-                                "Add to Watchlist",
-                                modifier = Modifier.weight(1f),
-                                fontSize = 13.sp,
-                                maxLines = 1,
-                                overflow = TextOverflow.Visible
-                            )
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                if (accountStates != null) {
+                                    Icon(
+                                        painter = if (!accountStates!!.watchlist) painterResource(R.drawable.baseline_add_24) else painterResource(
+                                            R.drawable.baseline_remove_24
+                                        ),
+                                        contentDescription = if (!accountStates!!.watchlist) "Add to Watchlist Button" else "Remove from watchlist Button"
+                                    )
+                                }
+
+                                Text(
+                                    text = "Watchlist",
+                                    modifier = Modifier.weight(1f),
+                                    fontSize = 13.sp,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Visible
+                                )
+                            }
+
+
                         }
                     }
                 }
