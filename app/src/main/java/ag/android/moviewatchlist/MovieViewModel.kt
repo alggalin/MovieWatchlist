@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.floatOrNull
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonPrimitive
 import javax.inject.Inject
@@ -133,7 +134,7 @@ class MovieViewModel @Inject constructor(
         viewModelScope.launch {
             val originalState = repository.movieAccountStates(movieId, sessionId)
             val ratingVal = when (val rated = originalState?.rated) {
-                is JsonObject -> rated["value"]?.jsonPrimitive?.intOrNull
+                is JsonObject -> rated["value"]?.jsonPrimitive?.floatOrNull
                 is JsonPrimitive -> null
                 else -> null
             }
@@ -163,6 +164,19 @@ class MovieViewModel @Inject constructor(
         }
     }
 
+    fun rateMovie(movieId: Int, movieRating: Float) {
+        viewModelScope.launch {
+            val success = repository.rateMovie(movieId, movieRating)
+
+            if(success) {
+                _accountStates.value = accountStates.value?.copy(
+                    rated = movieRating
+                )
+            } else {
+                // TODO: Show error
+            }
+        }
+    }
 
     suspend fun getRequestToken(): String? {
         return repository.getRequestToken()

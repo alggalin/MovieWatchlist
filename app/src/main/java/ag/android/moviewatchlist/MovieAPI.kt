@@ -172,6 +172,19 @@ class MovieAPI @Inject constructor() {
         return response.status == HttpStatusCode.Created || response.status == HttpStatusCode.OK
     }
 
+    suspend fun rateMovie(movieId: Int, movieRating: Float): Boolean {
+
+        val requestBody = RatingRequest(movieRating)
+
+        val response: HttpResponse = client.post("$BASE_URL/movie/$movieId/rating") {
+            contentType(ContentType.Application.Json)
+            header(HttpHeaders.Authorization, "Bearer ${BuildConfig.TMDB_API_KEY}")
+            setBody(requestBody)
+        }
+
+        return response.status == HttpStatusCode.OK || response.status == HttpStatusCode.Created
+    }
+
     suspend fun fetchAccountId(sessionId: String?): AccountResponse {
         val response: AccountResponse = client.get("$BASE_URL/account") {
             parameter("session_id", sessionId)

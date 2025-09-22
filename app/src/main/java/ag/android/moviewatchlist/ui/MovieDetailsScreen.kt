@@ -16,14 +16,22 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -32,9 +40,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import kotlin.math.roundToInt
 
 @Composable
 fun MovieDetailsScreen(
@@ -147,7 +157,7 @@ fun MovieDetailsScreen(
                                 )
                             } else {
                                 Text(
-                                    text = "%.1f".format(movie!!.voteAverage)
+                                    text = "%.1f / 10".format(movie!!.voteAverage)
                                 )
 
                             }
@@ -158,6 +168,18 @@ fun MovieDetailsScreen(
                             )
                         }
 
+                        // Add Slider for user to rate the movie themselves
+                        var showPopUp by remember { mutableStateOf(false) }
+
+                        if (showPopUp) {
+                            RatingPopUp(0f, { rating -> viewModel.rateMovie(movie!!.id, movieRating = rating)}, { showPopUp = false })
+                        }
+
+                        Button(
+                            shape = RoundedCornerShape(8.dp),
+                            onClick = { showPopUp = true }) {
+                            Text("Rate Movie")
+                        }
 
                         Button(
                             modifier = Modifier
@@ -213,4 +235,112 @@ fun MovieDetailsScreen(
         }
     )
 
+}
+
+@Composable
+fun RatingPopUp(
+    initialRating: Float,
+    saveUserRating: (Float) -> Unit,
+    showPopUp: () -> Unit
+) {
+    Dialog(onDismissRequest = showPopUp) {
+        Surface(
+            shape = RoundedCornerShape(8.dp),
+            tonalElevation = 4.dp,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(8.dp)
+                    .fillMaxWidth()
+            ) {
+                val userMovieRating: Float = ratingSlider(initialRating)
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+
+                    Button(
+                        modifier = Modifier.weight(1f), shape = RoundedCornerShape(8.dp),
+                        onClick = { showPopUp() },
+                    ) {
+                        Text(
+                            text = "Cancel",
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Center
+                        )
+
+                    }
+
+                    Button(
+                        modifier = Modifier.weight(1f), shape = RoundedCornerShape(8.dp),
+                        onClick = { showPopUp() },
+                    ) {
+                        Text(
+                            text = "Delete Rating",
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Center
+                        )
+                    }
+
+                    Button(
+                        modifier = Modifier.weight(1f), shape = RoundedCornerShape(8.dp),
+                        onClick = {
+                            saveUserRating(userMovieRating)
+                            showPopUp() }
+                    ) {
+                        Text(
+                            text = "Save",
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
+
+        }
+    }
+}
+
+@Composable
+fun ratingSlider(
+    initialRating: Float
+): Float {
+    var rating by remember { mutableFloatStateOf(initialRating) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    ) {
+        Text(
+
+            text = "Your Rating: ${rating.roundToHalf()}"
+        )
+
+        Slider(
+            value = rating,
+            onValueChange = { rating = it.roundToHalf() },
+            valueRange = 0.0f..10f,
+            steps = 18,
+            onValueChangeFinished = {  }, // TODO: Have the function POST the rating to account
+            colors = SliderDefaults.colors(
+                thumbColor = Color(0xFFFFDB58),
+                activeTrackColor = Color(0xFFFFDB58),
+                inactiveTrackColor = Color.LightGray,
+                activeTickColor = Color(0xFFFFDB58),
+                inactiveTickColor = Color.LightGray
+            )
+        )
+    }
+
+
+    return rating
+}
+
+fun Float.roundToHalf(): Float {
+    return (this * 2).roundToInt() / 2f
 }

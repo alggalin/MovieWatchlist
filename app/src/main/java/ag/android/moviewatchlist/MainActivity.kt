@@ -1,6 +1,8 @@
 package ag.android.moviewatchlist
 
+import ag.android.moviewatchlist.ui.FeaturedMoviesScreen
 import ag.android.moviewatchlist.ui.MovieDetailsScreen
+import ag.android.moviewatchlist.ui.MovieResultsScreen
 import ag.android.moviewatchlist.ui.MovieSearchBar
 import ag.android.moviewatchlist.ui.theme.MovieWatchlistTheme
 import android.content.Intent
@@ -14,6 +16,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
@@ -180,22 +184,22 @@ fun HomeScreen(
                     .padding(padding)
             ) {
 
-//                Column(
-//                    Modifier.verticalScroll(rememberScrollState())
-//                ) {
-//                    FeaturedMoviesScreen("Popular Movies", popularMovies, viewModel, navController)
-//
-//                    FeaturedMoviesScreen("Coming Soon", upcomingMovies, viewModel, navController)
-//
-//                    FeaturedMoviesScreen("In Theaters", theaterMovies, viewModel, navController)
-//                }
+                Column(
+                    Modifier.verticalScroll(rememberScrollState())
+                ) {
+                    FeaturedMoviesScreen("Popular Movies", popularMovies, viewModel, navController)
+
+                    FeaturedMoviesScreen("Coming Soon", upcomingMovies, viewModel, navController)
+
+                    FeaturedMoviesScreen("In Theaters", theaterMovies, viewModel, navController)
+                }
 
 
-//                MovieResultsScreen(
-//                    navController,
-//                    movieSearchResult,
-//                    viewModel
-//                )
+                MovieResultsScreen(
+                    navController,
+                    movieSearchResult,
+                    viewModel
+                )
 
 
                 Button(

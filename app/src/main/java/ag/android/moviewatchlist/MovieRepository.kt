@@ -33,6 +33,10 @@ class MovieRepository @Inject constructor(
         return api.toggleWatchlist(addingToWatchlist, sessionId, accountId, mediaId)
     }
 
+    suspend fun rateMovie(movieId: Int, movieRating: Float): Boolean {
+        return api.rateMovie(movieId, movieRating)
+    }
+
     suspend fun getRequestToken(): String? {
         return api.getRequestToken()
     }

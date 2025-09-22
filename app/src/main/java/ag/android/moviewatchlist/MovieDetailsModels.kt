@@ -38,6 +38,11 @@ data class Rated(
 data class NewAccountStates(
     val id: Int,
     val favorite: Boolean,
-    val rated: Int?,
+    val rated: Float?,
     val watchlist: Boolean
+)
+
+@Serializable
+data class RatingRequest(
+    val value: Float
 )
