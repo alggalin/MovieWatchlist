@@ -37,6 +37,10 @@ class MovieRepository @Inject constructor(
         return api.rateMovie(movieId, movieRating)
     }
 
+    suspend fun deleteRating(movieId: Int): Boolean {
+        return api.deleteRating(movieId)
+    }
+
     suspend fun getRequestToken(): String? {
         return api.getRequestToken()
     }

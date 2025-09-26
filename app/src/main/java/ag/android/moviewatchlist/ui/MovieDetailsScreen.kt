@@ -18,6 +18,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,6 +30,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,6 +48,10 @@ import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 @Composable
@@ -57,7 +65,32 @@ fun MovieDetailsScreen(
     val imageUrl = "https://image.tmdb.org/t/p/original${movie?.posterPath}"
     val movieSearched by viewModel.movie.collectAsState()
 
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) {
+        viewModel.uiEvent
+            .onEach { message ->
+                // Cancel any existing snackbar
+                snackbarHostState.currentSnackbarData?.dismiss()
+
+                // Show new snackbar
+                val result = snackbarHostState.showSnackbar(
+                    message = message,
+                    duration = SnackbarDuration.Short
+                )
+
+                // Optional: delay and dismiss manually
+                delay(1500)
+                snackbarHostState.currentSnackbarData?.dismiss()
+            }
+            .launchIn(this)
+    }
+
+
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             MovieSearchBar(
                 viewModel = viewModel,
@@ -168,11 +201,31 @@ fun MovieDetailsScreen(
                             )
                         }
 
+                        Row {
+                            Text(text = "User Rating: ")
+
+                            if(accountStates?.rated != null) {
+                                Text(text = "${accountStates!!.rated}")
+
+                            } else {
+                                Text(text = "N/A")
+                            }
+                        }
                         // Add Slider for user to rate the movie themselves
                         var showPopUp by remember { mutableStateOf(false) }
 
                         if (showPopUp) {
-                            RatingPopUp(0f, { rating -> viewModel.rateMovie(movie!!.id, movieRating = rating)}, { showPopUp = false })
+                            val initialRating = accountStates!!.rated ?: 0f
+                            RatingPopUp(
+                                initialRating = initialRating,
+                                saveUserRating = { rating ->
+                                    viewModel.rateMovie(
+                                        movie!!.id,
+                                        movieRating = rating
+                                    )
+                                },
+                                deleteUserRating = { viewModel.deleteRating(movie!!.id) },
+                                showPopUp = { showPopUp = false })
                         }
 
                         Button(
@@ -241,6 +294,7 @@ fun MovieDetailsScreen(
 fun RatingPopUp(
     initialRating: Float,
     saveUserRating: (Float) -> Unit,
+    deleteUserRating: () -> Unit,
     showPopUp: () -> Unit
 ) {
     Dialog(onDismissRequest = showPopUp) {
@@ -277,7 +331,10 @@ fun RatingPopUp(
 
                     Button(
                         modifier = Modifier.weight(1f), shape = RoundedCornerShape(8.dp),
-                        onClick = { showPopUp() },
+                        onClick = {
+                            deleteUserRating()
+                            showPopUp()
+                        },
                     ) {
                         Text(
                             text = "Delete Rating",
@@ -290,7 +347,8 @@ fun RatingPopUp(
                         modifier = Modifier.weight(1f), shape = RoundedCornerShape(8.dp),
                         onClick = {
                             saveUserRating(userMovieRating)
-                            showPopUp() }
+                            showPopUp()
+                        }
                     ) {
                         Text(
                             text = "Save",
@@ -326,7 +384,7 @@ fun ratingSlider(
             onValueChange = { rating = it.roundToHalf() },
             valueRange = 0.0f..10f,
             steps = 18,
-            onValueChangeFinished = {  }, // TODO: Have the function POST the rating to account
+            onValueChangeFinished = { }, // TODO: Have the function POST the rating to account
             colors = SliderDefaults.colors(
                 thumbColor = Color(0xFFFFDB58),
                 activeTrackColor = Color(0xFFFFDB58),

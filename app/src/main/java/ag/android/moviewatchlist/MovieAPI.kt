@@ -9,6 +9,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.android.Android
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.parameter
@@ -180,6 +181,16 @@ class MovieAPI @Inject constructor() {
             contentType(ContentType.Application.Json)
             header(HttpHeaders.Authorization, "Bearer ${BuildConfig.TMDB_API_KEY}")
             setBody(requestBody)
+        }
+
+        return response.status == HttpStatusCode.OK || response.status == HttpStatusCode.Created
+    }
+
+    suspend fun deleteRating(movieId: Int): Boolean {
+
+        val response: HttpResponse = client.delete("$BASE_URL/movie/$movieId/rating") {
+            contentType(ContentType.Application.Json)
+            header(HttpHeaders.Authorization, "Bearer ${BuildConfig.TMDB_API_KEY}")
         }
 
         return response.status == HttpStatusCode.OK || response.status == HttpStatusCode.Created

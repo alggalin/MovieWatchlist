@@ -235,10 +235,8 @@ fun HomeScreen(
 
 /*
     TODO:
-        - Be able to log in
-            - Check when launching if it exists -> save to viewmodel for the session
-        - Rate Movie
-            - 1-10? Like/Dislike/Favorite
+        - Favorite Movie
+            - Favorite
         - Create list of movies
             - Planning on watching + keeps track of release date
             - When clicking add to watchlist, use the sessionId to be able to add to account's watchlist

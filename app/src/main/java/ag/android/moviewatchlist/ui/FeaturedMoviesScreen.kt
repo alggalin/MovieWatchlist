@@ -33,8 +33,6 @@ import coil.request.ImageRequest
 
 /*
 
-    TODO: Will have layout for the home screen for featured movies, scrollable sideways
-
     Function will need to take the list of movies to display and maybe the name of the section
 
     "In Theaters, Coming Soon, Popular"

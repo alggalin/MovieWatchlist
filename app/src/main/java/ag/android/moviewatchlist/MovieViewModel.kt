@@ -7,8 +7,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -24,20 +26,6 @@ class MovieViewModel @Inject constructor(
     private val repository: MovieRepository,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
-
-    fun saveSessionId(sessionId: String) {
-        viewModelScope.launch {
-            context.sessionDataStore.edit { prefs ->
-                prefs[SessionKey.SESSION_ID] = sessionId
-            }
-        }
-    }
-
-    suspend fun getSessionId(context: Context): String? {
-        val prefs = context.sessionDataStore.data.first()
-        setSessionId(prefs[SESSION_ID])
-        return prefs[SESSION_ID]
-    }
 
     private val _movie = MutableStateFlow("")
     val movie = _movie.asStateFlow()
@@ -65,6 +53,24 @@ class MovieViewModel @Inject constructor(
 
     private var _accountId = MutableStateFlow<Int?>(null)
     val accountId = _accountId.asStateFlow()
+
+    private val _uiEvent = MutableSharedFlow<String>()
+    val uiEvent = _uiEvent.asSharedFlow()
+
+
+    fun saveSessionId(sessionId: String) {
+        viewModelScope.launch {
+            context.sessionDataStore.edit { prefs ->
+                prefs[SessionKey.SESSION_ID] = sessionId
+            }
+        }
+    }
+
+    suspend fun getSessionId(context: Context): String? {
+        val prefs = context.sessionDataStore.data.first()
+        setSessionId(prefs[SESSION_ID])
+        return prefs[SESSION_ID]
+    }
 
     init {
         viewModelScope.launch {
@@ -95,7 +101,7 @@ class MovieViewModel @Inject constructor(
 
     fun searchMovie(movieTitle: String) {
 
-        if(movieTitle == "") {
+        if (movieTitle == "") {
             _searchResult.value = null
             return
         }
@@ -111,9 +117,9 @@ class MovieViewModel @Inject constructor(
     fun getPopularMovies() {
 
         viewModelScope.launch {
-                _popularMovies.value = repository.getPopularMovies()
+            _popularMovies.value = repository.getPopularMovies()
 
-            }
+        }
 
     }
 
@@ -124,6 +130,7 @@ class MovieViewModel @Inject constructor(
 
         return _upcomingMovies.value
     }
+
     fun getCurrentlyPlaying() {
         viewModelScope.launch {
             _inTheaters.value = repository.getCurrentlyPlaying()
@@ -148,16 +155,27 @@ class MovieViewModel @Inject constructor(
         }
     }
 
-    fun toggleWatchlist(addingToWatchlist: Boolean, sessionId: String, accountId: Int, mediaId: Int) {
+    fun toggleWatchlist(
+        addingToWatchlist: Boolean,
+        sessionId: String,
+        accountId: Int,
+        mediaId: Int
+    ) {
         viewModelScope.launch {
 
-            val success = repository.toggleWatchlist(addingToWatchlist, sessionId, accountId, mediaId)
+            val success =
+                repository.toggleWatchlist(addingToWatchlist, sessionId, accountId, mediaId)
 
-            if(success) {
+            if (success) {
                 _accountStates.value = accountStates.value?.copy(
                     watchlist = !accountStates.value!!.watchlist
                 )
 
+                if(addingToWatchlist) {
+                    _uiEvent.emit("Added to watchlist")
+                } else {
+                    _uiEvent.emit("Removed from watchlist")
+                }
             } else {
                 // TODO: Show error
             }
@@ -168,12 +186,31 @@ class MovieViewModel @Inject constructor(
         viewModelScope.launch {
             val success = repository.rateMovie(movieId, movieRating)
 
-            if(success) {
+            if (success) {
                 _accountStates.value = accountStates.value?.copy(
                     rated = movieRating
                 )
+                _uiEvent.emit("Rating Saved!")
             } else {
                 // TODO: Show error
+                _uiEvent.emit("Failed to save rating")
+            }
+        }
+    }
+
+
+    fun deleteRating(movieId: Int) {
+        viewModelScope.launch {
+            val success = repository.deleteRating(movieId)
+
+            if (success) {
+                _accountStates.value = accountStates.value?.copy(
+                    rated = null
+                )
+                _uiEvent.emit("Rating Deleted")
+            } else {
+                // TODO: Show error
+                _uiEvent.emit("Failed to delete rating")
             }
         }
     }
