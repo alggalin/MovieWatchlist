@@ -142,7 +142,7 @@ class MovieAPI @Inject constructor() {
 
     suspend fun movieAccountStates(movieId: Int, sessionId: String?): AccountStates? {
 
-        if(sessionId == null) {
+        if (sessionId == null) {
             return null
         }
 
@@ -171,6 +171,28 @@ class MovieAPI @Inject constructor() {
         }.body()
 
         return response.status == HttpStatusCode.Created || response.status == HttpStatusCode.OK
+    }
+
+    suspend fun favoriteMovieToggle(
+        movieId: Int,
+        accountId: Int?,
+        sessionId: String?,
+        favoriteToggle: Boolean
+    ): Boolean {
+        if (accountId != null) {
+            val requestBody = FavoriteRequest("movie", movieId, !favoriteToggle)
+
+            val response: HttpResponse = client.post("$BASE_URL/account/$accountId/favorite") {
+                contentType(ContentType.Application.Json)
+                header(HttpHeaders.Authorization, "Bearer ${BuildConfig.TMDB_API_KEY}")
+                parameter("session_id", sessionId)
+                setBody(requestBody)
+            }
+
+            return response.status == HttpStatusCode.OK || response.status == HttpStatusCode.Created
+        }
+
+        return false
     }
 
     suspend fun rateMovie(movieId: Int, movieRating: Float): Boolean {

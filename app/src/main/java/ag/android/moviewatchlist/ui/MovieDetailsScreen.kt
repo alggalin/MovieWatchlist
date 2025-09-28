@@ -3,6 +3,7 @@ package ag.android.moviewatchlist.ui
 import ag.android.moviewatchlist.MovieViewModel
 import ag.android.moviewatchlist.R
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
@@ -145,20 +147,47 @@ fun MovieDetailsScreen(
                         .align(Alignment.CenterHorizontally)
                         .padding(4.dp)
                 ) {
-                    AsyncImage(
-                        model = ImageRequest.Builder(LocalContext.current).data(imageUrl)
-                            .crossfade(true)
-                            .build(),
-                        modifier = Modifier
-                            .height(300.dp)
-                            .width(200.dp)
-                            .padding(4.dp)
-                            .clip(RoundedCornerShape(8.dp)),
-                        contentDescription = "Poster for ${movie!!.title}",
-                        contentScale = ContentScale.Fit,
-                        placeholder = painterResource(R.drawable.baseline_image_24),
-                        error = painterResource(R.drawable.baseline_image_not_supported_24)
-                    )
+                    Box(
+                        modifier = Modifier.wrapContentSize()
+                    ) {
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalContext.current).data(imageUrl)
+                                .crossfade(true)
+                                .build(),
+                            modifier = Modifier
+                                .height(300.dp)
+                                .width(200.dp)
+                                .padding(4.dp)
+                                .clip(RoundedCornerShape(8.dp)),
+                            contentDescription = "Poster for ${movie!!.title}",
+                            contentScale = ContentScale.Fit,
+                            placeholder = painterResource(R.drawable.baseline_image_24),
+                            error = painterResource(R.drawable.baseline_image_not_supported_24)
+                        )
+
+                        IconButton(
+                            onClick = {
+                                viewModel.toggleFavorite(movie!!.id, accountStates!!.favorite)
+                            },
+                            modifier = Modifier.align(Alignment.TopEnd).padding(8.dp)
+                        ) {
+                            var favoriteIcon = R.drawable.baseline_favorite_border_24
+
+                            if(accountStates?.favorite == true) {
+                                favoriteIcon =  R.drawable.baseline_favorite_24
+                            }
+
+                            Icon(
+                                painter = painterResource(id = favoriteIcon),
+                                contentDescription = "Favorite Icon",
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .align(Alignment.TopEnd),
+                                tint = Color.Red
+                            )
+                        }
+                    }
+
 
                     Column(
                         modifier = Modifier
@@ -204,7 +233,7 @@ fun MovieDetailsScreen(
                         Row {
                             Text(text = "User Rating: ")
 
-                            if(accountStates?.rated != null) {
+                            if (accountStates?.rated != null) {
                                 Text(text = "${accountStates!!.rated}")
 
                             } else {

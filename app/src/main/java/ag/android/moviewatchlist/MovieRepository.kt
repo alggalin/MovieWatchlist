@@ -22,15 +22,29 @@ class MovieRepository @Inject constructor(
     }
 
     suspend fun getCurrentlyPlaying(): SearchResponse {
-        return  api.currentlyPlaying()
+        return api.currentlyPlaying()
     }
 
     suspend fun movieAccountStates(movieId: Int, sessionId: String?): AccountStates? {
         return api.movieAccountStates(movieId, sessionId)
     }
 
-    suspend fun toggleWatchlist(addingToWatchlist: Boolean, sessionId: String, accountId: Int, mediaId: Int): Boolean {
+    suspend fun toggleWatchlist(
+        addingToWatchlist: Boolean,
+        sessionId: String,
+        accountId: Int,
+        mediaId: Int
+    ): Boolean {
         return api.toggleWatchlist(addingToWatchlist, sessionId, accountId, mediaId)
+    }
+
+    suspend fun toggleFavorite(
+        movieId: Int,
+        accountId: Int?,
+        sessionId: String?,
+        currentlyFavorite: Boolean
+    ): Boolean {
+        return api.favoriteMovieToggle(movieId, accountId, sessionId, currentlyFavorite)
     }
 
     suspend fun rateMovie(movieId: Int, movieRating: Float): Boolean {

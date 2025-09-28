@@ -182,6 +182,27 @@ class MovieViewModel @Inject constructor(
         }
     }
 
+    fun toggleFavorite(movieId: Int, currentlyFavorite: Boolean) {
+        viewModelScope.launch {
+            val success =
+                repository.toggleFavorite(movieId, accountId.value, sessionId.value, currentlyFavorite)
+
+            if(success) {
+                _accountStates.value = accountStates.value?.copy(
+                    favorite = !accountStates.value!!.favorite
+                )
+
+                if(currentlyFavorite) {
+                    _uiEvent.emit("Removed from favorites")
+                } else {
+                    _uiEvent.emit("Added to favorites")
+                }
+            } else {
+                // TODO: Show error
+            }
+        }
+    }
+
     fun rateMovie(movieId: Int, movieRating: Float) {
         viewModelScope.launch {
             val success = repository.rateMovie(movieId, movieRating)

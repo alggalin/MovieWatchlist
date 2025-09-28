@@ -46,3 +46,12 @@ data class NewAccountStates(
 data class RatingRequest(
     val value: Float
 )
+
+@Serializable
+data class FavoriteRequest(
+    @SerialName("media_type")
+    val mediaType: String,
+    @SerialName("media_id")
+    val mediaId: Int,
+    val favorite: Boolean
+)
