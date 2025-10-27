@@ -9,7 +9,7 @@ data class WatchListRequest(
     @SerialName("media_type")
     val mediaType: String,
     @SerialName("media_id")
-    val mediaId:Int,
+    val mediaId: Int,
     val watchlist: Boolean
 )
 
@@ -55,3 +55,15 @@ data class FavoriteRequest(
     val mediaId: Int,
     val favorite: Boolean
 )
+
+@Serializable
+data class WatchlistMoviesResponse(
+    val page: Int,
+    @SerialName("results")
+    val watchlistMovies: List<Movie>,
+    @SerialName("total_pages")
+    val totalPages: Int,
+    @SerialName("total_results")
+    val totalResults: Int
+)
+

@@ -86,7 +86,7 @@ fun FeaturedMovieCard(movie: Movie, viewModel: MovieViewModel, navController: Na
             .padding(4.dp)
             .clickable {
                 viewModel.selectMovie(movie)
-                navController.navigate("details")
+                navController.navigate("movies/details")
             }
             .clip(RoundedCornerShape(8.dp)),
 

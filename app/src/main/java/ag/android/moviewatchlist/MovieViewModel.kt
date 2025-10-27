@@ -155,6 +155,15 @@ class MovieViewModel @Inject constructor(
         }
     }
 
+    suspend fun getWatchlistMovies(
+        accountId: Int,
+        sessionId: String,
+        pageRequested: Int
+    ): List<Movie>? {
+
+        return repository.getWatchlistMovies(accountId, sessionId, pageRequested).watchlistMovies
+    }
+
     fun toggleWatchlist(
         addingToWatchlist: Boolean,
         sessionId: String,
@@ -171,7 +180,7 @@ class MovieViewModel @Inject constructor(
                     watchlist = !accountStates.value!!.watchlist
                 )
 
-                if(addingToWatchlist) {
+                if (addingToWatchlist) {
                     _uiEvent.emit("Added to watchlist")
                 } else {
                     _uiEvent.emit("Removed from watchlist")
@@ -185,14 +194,19 @@ class MovieViewModel @Inject constructor(
     fun toggleFavorite(movieId: Int, currentlyFavorite: Boolean) {
         viewModelScope.launch {
             val success =
-                repository.toggleFavorite(movieId, accountId.value, sessionId.value, currentlyFavorite)
+                repository.toggleFavorite(
+                    movieId,
+                    accountId.value,
+                    sessionId.value,
+                    currentlyFavorite
+                )
 
-            if(success) {
+            if (success) {
                 _accountStates.value = accountStates.value?.copy(
                     favorite = !accountStates.value!!.favorite
                 )
 
-                if(currentlyFavorite) {
+                if (currentlyFavorite) {
                     _uiEvent.emit("Removed from favorites")
                 } else {
                     _uiEvent.emit("Added to favorites")

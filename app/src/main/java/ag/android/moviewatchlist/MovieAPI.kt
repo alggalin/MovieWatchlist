@@ -173,6 +173,23 @@ class MovieAPI @Inject constructor() {
         return response.status == HttpStatusCode.Created || response.status == HttpStatusCode.OK
     }
 
+    // TODO: Finish funcitonality for this function all the way to the viewmodel
+    suspend fun getWatchlistMovies(
+        accountId: Int,
+        sessionId: String,
+        pageRequested: Int
+    ): WatchlistMoviesResponse {
+
+        val response: WatchlistMoviesResponse = client.get("$BASE_URL/account/$accountId/watchlist/movies") {
+            header(HttpHeaders.Authorization, "Bearer ${BuildConfig.TMDB_API_KEY}")
+            // parameter("api_key", "${BuildConfig.TMDB_API_KAY}") if the above does not work
+            parameter("session_id", sessionId)
+            parameter("page", pageRequested)
+        }.body<WatchlistMoviesResponse>()
+
+        return response
+    }
+
     suspend fun favoriteMovieToggle(
         movieId: Int,
         accountId: Int?,

@@ -4,6 +4,7 @@ import ag.android.moviewatchlist.ui.FeaturedMoviesScreen
 import ag.android.moviewatchlist.ui.MovieDetailsScreen
 import ag.android.moviewatchlist.ui.MovieResultsScreen
 import ag.android.moviewatchlist.ui.MovieSearchBar
+import ag.android.moviewatchlist.ui.WatchlistMoviesScreen
 import ag.android.moviewatchlist.ui.theme.MovieWatchlistTheme
 import android.content.Intent
 import android.os.Bundle
@@ -12,34 +13,53 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavHost
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
+import androidx.navigation.navigation
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
@@ -56,9 +76,16 @@ class MainActivity : ComponentActivity() {
         // handleAuthRedirect(intent)
         setContent {
             MovieWatchlistTheme {
-                val navController = rememberNavController()
+                val moviesNavController = rememberNavController()
+                val watchlistNavController = rememberNavController()
+                val favoritesNavController = rememberNavController()
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    MainNavGraph(navController = navController, innerPadding = innerPadding)
+                    MainNavGraph(
+                        moviesNavController = moviesNavController,
+                        watchlistNavController = watchlistNavController,
+                        favoritesNavController = favoritesNavController,
+                        innerPadding = innerPadding
+                    )
                 }
             }
         }
@@ -73,43 +100,121 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun MainNavGraph(navController: NavHostController, innerPadding: PaddingValues) {
-    // Shared Viewmodel defined at NavHost level
-    val sharedViewModel: MovieViewModel = hiltViewModel()
+fun MainNavGraph(
+    moviesNavController: NavHostController,
+    watchlistNavController: NavHostController,
+    favoritesNavController: NavHostController,
+    innerPadding: PaddingValues
+) {
+    // ViewModels defined at NavHost level
+    val moviesViewModel: MovieViewModel = hiltViewModel()
+    val watchlistViewModel: MovieViewModel = hiltViewModel()
+    val favoritesViewModel: MovieViewModel = hiltViewModel()
 
-    NavHost(navController = navController, startDestination = "home") {
-        composable("home") {
-            HomeScreen(
-                navController = navController,
-                viewModel = sharedViewModel,
-                innerPadding = innerPadding
+    // keeps track of which screen to show depending on the bottom app bar selection
+    val selectedScreen = rememberSaveable { mutableStateOf("movies") }
 
+
+    Scaffold(
+        bottomBar = {
+            MovieBottomNavigationBar(
+                visibleScreen = selectedScreen,
+                onScreenSelected = { selectedScreen.value = it }
             )
         }
+    ) { innerPadding ->
 
-        composable("details") {
-            MovieDetailsScreen(
-                navController = navController,
-                viewModel = sharedViewModel,
-                modifier = Modifier.padding(innerPadding)
-            )
+        Crossfade(targetState = selectedScreen.value) { screen ->
+            when (screen) {
+                "movies" -> NavHost(
+                    navController = moviesNavController,
+                    startDestination = "movies"
+                ) {
+
+                    // Nested Graph for movies Section
+                    navigation(startDestination = "movies/home", route = "movies") {
+                        composable("movies/home") {
+                            HomeScreen(
+                                navController = moviesNavController,
+                                viewModel = moviesViewModel,
+                                innerPadding = innerPadding
+
+                            )
+                        }
+
+                        composable("movies/details") {
+                            MovieDetailsScreen(
+                                navController = moviesNavController,
+                                viewModel = moviesViewModel,
+                                modifier = Modifier.padding(innerPadding)
+                            )
+                        }
+                    }
+
+
+                    composable(
+                        route = "authResult?request_token={request_token}",
+                        arguments = listOf(navArgument("request_token") {
+                            type = NavType.StringType
+                        }),
+                        deepLinks = listOf(
+                            navDeepLink {
+                                uriPattern =
+                                    "moviewatchlist://auth/callback?request_token={request_token}"
+                            })
+                    ) { backStackEntry ->
+                        val requestToken = backStackEntry.arguments?.getString("request_token")
+                        AuthResultScreen(
+                            requestToken = requestToken,
+                            onSessionCreated = { moviesNavController.navigate("home") },
+                            viewModel = moviesViewModel
+                        )
+                    }
+
+
+                }
+
+                "watchlist" -> NavHost(
+                    navController = watchlistNavController,
+                    startDestination = "watchlist"
+                ) {
+                    composable("watchlist") {
+                        WatchlistMoviesScreen(
+                            viewModel = watchlistViewModel,
+                            navController = watchlistNavController
+                        )
+                    }
+
+                    composable("details") {
+                        MovieDetailsScreen(
+                            navController = watchlistNavController,
+                            viewModel = watchlistViewModel,
+                            modifier = Modifier.padding(innerPadding)
+                        )
+                    }
+                }
+
+                "favorites" -> NavHost(
+                    navController = favoritesNavController,
+                    startDestination = "favorites"
+                ) {
+                    composable("favorites") {
+
+                    }
+
+                    composable("details") {
+                        MovieDetailsScreen(
+                            navController = favoritesNavController,
+                            viewModel = favoritesViewModel,
+                            modifier = Modifier.padding(innerPadding)
+                        )
+                    }
+
+                }
+            }
         }
 
-        composable(
-            route = "authResult?request_token={request_token}",
-            arguments = listOf(navArgument("request_token") { type = NavType.StringType }),
-            deepLinks = listOf(
-                navDeepLink {
-                    uriPattern = "moviewatchlist://auth/callback?request_token={request_token}"
-                })
-        ) { backStackEntry ->
-            val requestToken = backStackEntry.arguments?.getString("request_token")
-            AuthResultScreen(
-                requestToken = requestToken,
-                onSessionCreated = { navController.navigate("home") },
-                viewModel = sharedViewModel
-            )
-        }
+
     }
 }
 
@@ -119,7 +224,6 @@ fun AuthResultScreen(
     onSessionCreated: () -> Unit,
     viewModel: MovieViewModel
 ) {
-    Log.e("TEST", "WWE MADE IT")
 
     LaunchedEffect(requestToken) {
         if (requestToken != null) {
@@ -141,7 +245,68 @@ fun AuthResultScreen(
     }
 }
 
+@Composable
+fun MovieBottomNavigationBar(
+    visibleScreen: MutableState<String>,
+    onScreenSelected: (String) -> Unit
+) {
 
+
+    NavigationBar {
+
+        NavigationBarItem(
+            icon = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        painterResource(R.drawable.baseline_local_movies_24),
+                        contentDescription = "movies"
+                    )
+
+                    Text(text = "Movies", fontSize = 12.sp)
+                }
+            },
+            onClick = {
+                onScreenSelected("movies")
+            },
+            selected = visibleScreen.value == "movies"
+
+        )
+
+        NavigationBarItem(
+            icon = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        painterResource(R.drawable.baseline_watch_later_24),
+                        contentDescription = "Watchlist",
+                    )
+
+                    Text(text = "Watchlist", fontSize = 12.sp)
+                }
+            },
+            onClick = {
+                onScreenSelected("watchlist")
+            },
+            selected = visibleScreen.value == "watchlist"
+        )
+
+        NavigationBarItem(
+            icon = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        painterResource(R.drawable.baseline_favorite_bottom_bar),
+                        contentDescription = "Favorites List"
+                    )
+
+                    Text(text = "Favorites", fontSize = 12.sp)
+                }
+            },
+            onClick = {
+                onScreenSelected("favorites")
+            },
+            selected = visibleScreen.value == "favorites"
+        )
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -160,6 +325,9 @@ fun HomeScreen(
     val context = LocalContext.current
     val baseUrl = "https://www.themoviedb.org/authenticate/"
 
+    val currentBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = currentBackStackEntry?.destination?.route
+
     viewModel.getPopularMovies()
     viewModel.getUpcomingMovies()
     viewModel.getCurrentlyPlaying()
@@ -177,6 +345,9 @@ fun HomeScreen(
                 navController = navController,
                 movieSearched = movieSearched
             )
+        },
+        bottomBar = { // bottom navigation bar to switch between searching, watchlist and favorites
+
         },
         content = { padding ->
             Column(
@@ -229,14 +400,14 @@ fun HomeScreen(
                     Text("Test Account ID")
                 }
             }
-        }
-    )
+        },
+
+        )
 }
 
 /*
     TODO:
-        - Favorite Movie
-            - Favorite
+        - Have each navigation bar tab have it's own NavHost so that each one keeps it's navigation in it's own stack
         - Create list of movies
             - Planning on watching + keeps track of release date
             - When clicking add to watchlist, use the sessionId to be able to add to account's watchlist

@@ -3,10 +3,11 @@ package ag.android.moviewatchlist.ui
 import ag.android.moviewatchlist.Movie
 import ag.android.moviewatchlist.MovieViewModel
 import ag.android.moviewatchlist.R
-import ag.android.moviewatchlist.SearchResponse
+import android.util.Log
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -21,6 +22,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,46 +40,44 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 
-
-// TODO: Make it so that when navigating away from search bar using bottom nav bar
-//  and going back, the search screen will still be there
-// composable for the search results when searching for a movie
 @Composable
-fun MovieResultsScreen(
-    navController: NavController,
-    movieResults: SearchResponse?,
-    viewModel: MovieViewModel
-) {
+fun WatchlistMoviesScreen(viewModel: MovieViewModel, navController: NavController) {
     val listState = rememberLazyListState()
+    val context = LocalContext.current
 
-    // "When movieResults changes, run this code"
-    LaunchedEffect(movieResults) {
-        listState.scrollToItem(0)
+    val watchlistMovies = remember { mutableStateOf<List<Movie>?>(null) }
+
+    LaunchedEffect(Unit) {
+        watchlistMovies.value = viewModel.getWatchlistMovies(
+            viewModel.accountId.value!!,
+            viewModel.getSessionId(context)!!,
+            1
+        )
     }
 
-    Spacer(modifier = Modifier.size(4.dp))
 
-    if (movieResults != null && movieResults.results.isNotEmpty()) {
+    if (watchlistMovies.value?.isNotEmpty() == true) {
         LazyColumn(state = listState) {
-            movieResults.results.forEach { movie ->
+            watchlistMovies.value!!.forEach { movie ->
                 item {
-                    MovieItem(movie, viewModel, navController)
+                    WatchlistMovieCard(movie, viewModel, navController)
                 }
             }
         }
+    } else if (watchlistMovies.value == null || watchlistMovies.value!!.isEmpty()) {
 
-    } else if (movieResults != null && movieResults.results.isEmpty()) {
-        Text(
-            modifier = Modifier.padding(4.dp),
-            text = "No Results Found."
-        )
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(text = "Your Watchlist is empty.")
+
+        }
     }
 }
 
-
-// Composable for the layout for the individual movie information
 @Composable
-fun MovieItem(movie: Movie, viewModel: MovieViewModel, navController: NavController) {
+fun WatchlistMovieCard(movie: Movie, viewModel: MovieViewModel, navController: NavController) {
 
     val imageUrl = "https://image.tmdb.org/t/p/original${movie.posterPath}"
     val releaseYear: String? = extractYear(movie.releaseDate)
@@ -89,15 +90,13 @@ fun MovieItem(movie: Movie, viewModel: MovieViewModel, navController: NavControl
         shape = RectangleShape,
         onClick = {
             viewModel.selectMovie(movie)
-            navController.navigate("movies/details")
+            navController.navigate("details")
         },
-        elevation = CardDefaults.cardElevation(4.dp),
+        elevation = CardDefaults.cardElevation(4.dp)
     ) {
-
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
-
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current).data(imageUrl).crossfade(true)
                     .build(),
@@ -162,13 +161,4 @@ fun MovieItem(movie: Movie, viewModel: MovieViewModel, navController: NavControl
             }
         }
     }
-}
-
-// Extracts YYYY from API YYYY-MM-DD
-fun extractYear(movieDate: String?): String? {
-    if (movieDate != null) {
-        return if (movieDate.length >= 4) movieDate.substring(0, 4) else null
-    }
-
-    return null
 }

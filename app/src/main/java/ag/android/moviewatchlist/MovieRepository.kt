@@ -38,6 +38,14 @@ class MovieRepository @Inject constructor(
         return api.toggleWatchlist(addingToWatchlist, sessionId, accountId, mediaId)
     }
 
+    suspend fun getWatchlistMovies(
+        accountId: Int,
+        sessionId: String,
+        pageRequested: Int
+    ): WatchlistMoviesResponse {
+        return api.getWatchlistMovies(accountId, sessionId, pageRequested)
+    }
+
     suspend fun toggleFavorite(
         movieId: Int,
         accountId: Int?,
