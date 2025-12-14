@@ -16,6 +16,8 @@ import androidx.activity.viewModels
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -40,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
@@ -79,14 +82,14 @@ class MainActivity : ComponentActivity() {
                 val moviesNavController = rememberNavController()
                 val watchlistNavController = rememberNavController()
                 val favoritesNavController = rememberNavController()
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    MainNavGraph(
-                        moviesNavController = moviesNavController,
-                        watchlistNavController = watchlistNavController,
-                        favoritesNavController = favoritesNavController,
-                        innerPadding = innerPadding
-                    )
-                }
+                //Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                MainNavGraph(
+                    moviesNavController = moviesNavController,
+                    watchlistNavController = watchlistNavController,
+                    favoritesNavController = favoritesNavController,
+                    //innerPadding = innerPadding
+                )
+                //}
             }
         }
     }
@@ -103,8 +106,7 @@ class MainActivity : ComponentActivity() {
 fun MainNavGraph(
     moviesNavController: NavHostController,
     watchlistNavController: NavHostController,
-    favoritesNavController: NavHostController,
-    innerPadding: PaddingValues
+    favoritesNavController: NavHostController
 ) {
     // ViewModels defined at NavHost level
     val moviesViewModel: MovieViewModel = hiltViewModel()
@@ -122,7 +124,7 @@ fun MainNavGraph(
                 onScreenSelected = { selectedScreen.value = it }
             )
         }
-    ) { innerPadding ->
+    ) { innerPadding2 ->
 
         Crossfade(targetState = selectedScreen.value) { screen ->
             when (screen) {
@@ -137,7 +139,7 @@ fun MainNavGraph(
                             HomeScreen(
                                 navController = moviesNavController,
                                 viewModel = moviesViewModel,
-                                innerPadding = innerPadding
+                                innerPadding = innerPadding2
 
                             )
                         }
@@ -146,7 +148,8 @@ fun MainNavGraph(
                             MovieDetailsScreen(
                                 navController = moviesNavController,
                                 viewModel = moviesViewModel,
-                                modifier = Modifier.padding(innerPadding)
+                                modifier = Modifier.padding(innerPadding2),
+                                showSearchBar = true
                             )
                         }
                     }
@@ -185,11 +188,22 @@ fun MainNavGraph(
                         )
                     }
 
-                    composable("details") {
+                    composable(
+                        route = "details?showSearchBar={showSearchBar}",
+                        arguments = listOf(
+                            navArgument("showSearchBar") {
+                                type = NavType.BoolType
+                                defaultValue = false
+                            }
+                        )) { backStackEntry ->
+                        val showSearchBar =
+                            backStackEntry.arguments?.getBoolean("showSearchBar") ?: false
+
                         MovieDetailsScreen(
                             navController = watchlistNavController,
                             viewModel = watchlistViewModel,
-                            modifier = Modifier.padding(innerPadding)
+                            modifier = Modifier.padding(innerPadding2),
+                            showSearchBar = showSearchBar
                         )
                     }
                 }
@@ -202,11 +216,22 @@ fun MainNavGraph(
 
                     }
 
-                    composable("details") {
+                    composable(
+                        "details?showSearchBar={showSearchBar}",
+                        arguments = listOf(
+                            navArgument("showSearchBar") {
+                                type = NavType.BoolType
+                                defaultValue = false
+                            }
+                        )) { backStackEntry ->
+                        val showSearchBar =
+                            backStackEntry.arguments?.getBoolean("showSearchBar") ?: false
+
                         MovieDetailsScreen(
                             navController = favoritesNavController,
                             viewModel = favoritesViewModel,
-                            modifier = Modifier.padding(innerPadding)
+                            modifier = Modifier.padding(innerPadding2),
+                            showSearchBar = showSearchBar
                         )
                     }
 
@@ -338,71 +363,67 @@ fun HomeScreen(
         viewModel.fetchAccountId(viewModel.sessionId.value)
     }
 
-    Scaffold(
-        topBar = {
-            MovieSearchBar(
-                viewModel = viewModel,
-                navController = navController,
-                movieSearched = movieSearched
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(
+                start = innerPadding.calculateStartPadding(LayoutDirection.Ltr),
+                end = innerPadding.calculateEndPadding(LayoutDirection.Rtl),
+                bottom = innerPadding.calculateBottomPadding()
             )
-        },
-        bottomBar = { // bottom navigation bar to switch between searching, watchlist and favorites
-
-        },
-        content = { padding ->
-            Column(
-                modifier = Modifier
-                    .padding(padding)
-            ) {
-
-                Column(
-                    Modifier.verticalScroll(rememberScrollState())
-                ) {
-                    FeaturedMoviesScreen("Popular Movies", popularMovies, viewModel, navController)
-
-                    FeaturedMoviesScreen("Coming Soon", upcomingMovies, viewModel, navController)
-
-                    FeaturedMoviesScreen("In Theaters", theaterMovies, viewModel, navController)
-                }
-
-
-                MovieResultsScreen(
-                    navController,
-                    movieSearchResult,
-                    viewModel
-                )
-
-
-                Button(
-                    onClick = {
-                        CoroutineScope(Dispatchers.Main).launch {
-                            val requestToken = viewModel.getRequestToken()
-                            requestToken?.let {
-                                val authUrl =
-                                    "$baseUrl$requestToken?redirect_to=moviewatchlist://auth/callback"
-
-                                context.startActivity(Intent(Intent.ACTION_VIEW, authUrl.toUri()))
-
-                            } ?: Log.e("ERROR", "Failed to retrieve Token.")
-
-                        }
-
-                    }
-                ) {
-                    Text(text = "Login")
-                }
-
-                Button(
-                    onClick = {
-                        Log.d("Account ID TEST: ", viewModel.accountId.value.toString())
-                    }
-                ) {
-                    Text("Test Account ID")
-                }
-            }
-        },
-
+    ) {
+        MovieSearchBar(
+            viewModel = viewModel,
+            navController = navController,
+            movieSearched = movieSearched
         )
+
+        Column(
+            Modifier.verticalScroll(rememberScrollState())
+        ) {
+            FeaturedMoviesScreen("Popular Movies", popularMovies, viewModel, navController)
+
+            FeaturedMoviesScreen("Coming Soon", upcomingMovies, viewModel, navController)
+
+            FeaturedMoviesScreen("In Theaters", theaterMovies, viewModel, navController)
+        }
+
+
+        MovieResultsScreen(
+            navController,
+            movieSearchResult,
+            viewModel
+        )
+
+
+        Button(
+            onClick = {
+                CoroutineScope(Dispatchers.Main).launch {
+                    val requestToken = viewModel.getRequestToken()
+                    requestToken?.let {
+                        val authUrl =
+                            "$baseUrl$requestToken?redirect_to=moviewatchlist://auth/callback"
+
+                        context.startActivity(Intent(Intent.ACTION_VIEW, authUrl.toUri()))
+
+                    } ?: Log.e("ERROR", "Failed to retrieve Token.")
+
+                }
+
+            }
+        ) {
+            Text(text = "Login")
+        }
+
+        Button(
+            onClick = {
+                Log.d("Account ID TEST: ", viewModel.accountId.value.toString())
+            }
+        ) {
+            Text("Test Account ID")
+        }
+    }
+
 }
 
 /*

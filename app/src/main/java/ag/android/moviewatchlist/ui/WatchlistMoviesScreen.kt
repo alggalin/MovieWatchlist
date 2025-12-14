@@ -90,7 +90,7 @@ fun WatchlistMovieCard(movie: Movie, viewModel: MovieViewModel, navController: N
         shape = RectangleShape,
         onClick = {
             viewModel.selectMovie(movie)
-            navController.navigate("details")
+            navController.navigate("details?showSearchBar=false")
         },
         elevation = CardDefaults.cardElevation(4.dp)
     ) {

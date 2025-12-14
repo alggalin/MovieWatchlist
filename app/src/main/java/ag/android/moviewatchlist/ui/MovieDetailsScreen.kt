@@ -60,7 +60,8 @@ import kotlin.math.roundToInt
 fun MovieDetailsScreen(
     navController: NavController,
     viewModel: MovieViewModel,
-    modifier: Modifier
+    modifier: Modifier,
+    showSearchBar: Boolean
 ) {
     val movie by viewModel.selectedMovie.collectAsState()
     val releaseYear = extractYear(movie?.releaseDate)
@@ -94,11 +95,13 @@ fun MovieDetailsScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            MovieSearchBar(
-                viewModel = viewModel,
-                navController = navController,
-                movieSearched = movieSearched
-            )
+            if(showSearchBar) {
+                MovieSearchBar(
+                    viewModel = viewModel,
+                    navController = navController,
+                    movieSearched = movieSearched
+                )
+            }
         },
         content = { padding ->
 
